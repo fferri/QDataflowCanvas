@@ -616,6 +616,21 @@ QBrush QDataflowNode::headerBrush() const
     return Qt::lightGray;
 }
 
+QPen QDataflowNode::tempConnectionPen() const
+{
+    return QPen(Qt::gray, 1, Qt::DashLine, Qt::RoundCap, Qt::RoundJoin);
+}
+
+QPen QDataflowNode::connectionPen() const
+{
+    return QPen(Qt::black, 2, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+}
+
+QPen QDataflowNode::invalidConnectionPen() const
+{
+    return QPen(Qt::red, 1, Qt::DashLine, Qt::RoundCap, Qt::RoundJoin);
+}
+
 void QDataflowNode::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *)
 {
     bool sel = option->state & QStyle::State_Selected,
@@ -805,7 +820,7 @@ void QDataflowOutlet::mousePressEvent(QGraphicsSceneMouseEvent *event)
     tmpConn_ = new QGraphicsLineItem(this);
     tmpConn_->setPos(0, node()->ioletHeight() / 2);
     tmpConn_->setZValue(10000);
-    tmpConn_->setPen(QPen(Qt::red, 1, Qt::DotLine, Qt::RoundCap, Qt::RoundJoin));
+    tmpConn_->setPen(node()->tempConnectionPen());
     tmpConn_->setFlag(ItemStacksBehindParent);
     node()->canvas()->raiseItem(tmpConn_);
     node()->canvas()->raiseItem(node());
@@ -840,12 +855,21 @@ void QDataflowOutlet::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
         // inlet under mouse:
         QDataflowInlet *inlet = node()->canvas()->itemAtT<QDataflowInlet>(event->scenePos());
 
-        // check if connection can be done:
+        // give visual feedback about the connection being made:
         QDataflowModelOutlet *mdloutlet = node()->modelNode()->outlet(index());
         QDataflowModelInlet *mdlinlet = inlet ? inlet->node()->modelNode()->inlet(inlet->index()) : nullptr;
-        bool canDo = inlet && mdloutlet->canMakeConnectionTo(mdlinlet) && mdlinlet->canAcceptConnectionFrom(mdloutlet);
-
-        tmpConn_->setPen(QPen(canDo ? Qt::black : Qt::red, 1, inlet ? Qt::SolidLine : Qt::DotLine, Qt::RoundCap, Qt::RoundJoin));
+        if(inlet && mdloutlet->canMakeConnectionTo(mdlinlet) && mdlinlet->canAcceptConnectionFrom(mdloutlet))
+        {
+            tmpConn_->setPen(node()->connectionPen());
+        }
+        else if(inlet)
+        {
+            tmpConn_->setPen(node()->invalidConnectionPen());
+        }
+        else
+        {
+            tmpConn_->setPen(node()->tempConnectionPen());
+        }
     }
 }
 

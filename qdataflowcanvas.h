@@ -154,6 +154,9 @@ public:
     QPen objectPen() const;
     QBrush objectBrush() const;
     QBrush headerBrush() const;
+    QPen tempConnectionPen() const;
+    QPen connectionPen() const;
+    QPen invalidConnectionPen() const;
 
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
 
