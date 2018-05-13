@@ -58,6 +58,7 @@ QDataflowCanvas::QDataflowCanvas(QWidget *parent)
     showObjectHoverFeedback_ = false;
     showConnectionHoverFeedback_ = false;
     showIOletsTooltips_ = false;
+    gridSize_ = 1.0;
 }
 
 QDataflowCanvas::~QDataflowCanvas()
@@ -247,6 +248,16 @@ void QDataflowCanvas::setShowConnectionHoverFeedback(bool show)
     {
         conn->setAcceptHoverEvents(show);
     }
+}
+
+qreal QDataflowCanvas::gridSize()
+{
+    return gridSize_;
+}
+
+void QDataflowCanvas::setGridSize(qreal sz)
+{
+    gridSize_ = qMax(1.0, sz);
 }
 
 void QDataflowCanvas::mouseDoubleClickEvent(QMouseEvent *event)
@@ -629,6 +640,14 @@ QVariant QDataflowNode::itemChange(GraphicsItemChange change, const QVariant &va
 {
     switch (change) {
     case ItemPositionHasChanged:
+        if(canvas()->gridSize() > 1)
+        {
+            const qreal gridSize = canvas()->gridSize();
+            QPointF p = pos();
+            p.setX(qRound(p.x() / gridSize) * gridSize);
+            p.setY(qRound(p.y() / gridSize) * gridSize);
+            setPos(p);
+        }
         adjustConnections();
         modelNode_->setPos(QPoint(pos().x(), pos().y()));
         break;

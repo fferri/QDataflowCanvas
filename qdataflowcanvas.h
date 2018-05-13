@@ -70,6 +70,8 @@ public:
     void setShowObjectHoverFeedback(bool show);
     bool showConnectionHoverFeedback();
     void setShowConnectionHoverFeedback(bool show);
+    qreal gridSize();
+    void setGridSize(qreal sz);
 
 protected:
     template<typename T>
@@ -105,6 +107,7 @@ private:
     bool showIOletsTooltips_;
     bool showObjectHoverFeedback_;
     bool showConnectionHoverFeedback_;
+    qreal gridSize_;
 };
 
 class QDataflowNode : public QGraphicsItem
