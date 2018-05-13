@@ -147,7 +147,7 @@ public:
     QDataflowCanvas * canvas() const {return canvas_;}
 
     qreal ioletWidth() const {return 10;}
-    qreal ioletHeight() const {return 3;}
+    qreal ioletHeight() const {return 4;}
     qreal ioletSpacing() const {return 13;}
     qreal inletsWidth() const;
     qreal outletsWidth() const;
