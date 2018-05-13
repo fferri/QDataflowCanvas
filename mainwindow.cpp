@@ -128,6 +128,9 @@ MainWindow::MainWindow(QWidget *parent)
 
     classList << "add" << "sub" << "mul" << "div" << "pow" << "source" << "sink" << "num2str";
     canvas->setCompletion(this);
+    canvas->setShowObjectHoverFeedback(true);
+    canvas->setShowConnectionHoverFeedback(true);
+    canvas->setShowIOletTooltips(true);
 
     QDataflowModel *model = canvas->model();
 

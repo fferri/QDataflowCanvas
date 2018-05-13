@@ -54,6 +54,10 @@ QDataflowCanvas::QDataflowCanvas(QWidget *parent)
     setDragMode(QGraphicsView::RubberBandDrag);
 
     setModel(new QDataflowModel(this));
+
+    showObjectHoverFeedback_ = false;
+    showConnectionHoverFeedback_ = false;
+    showIOletsTooltips_ = false;
 }
 
 QDataflowCanvas::~QDataflowCanvas()
@@ -185,6 +189,66 @@ void QDataflowCanvas::raiseItem(QGraphicsItem *item)
     }
 }
 
+bool QDataflowCanvas::showIOletTooltips()
+{
+    return showIOletsTooltips_;
+}
+
+void QDataflowCanvas::setShowIOletTooltips(bool show)
+{
+    showIOletsTooltips_ = show;
+
+    if(show)
+    {
+        if(showObjectHoverFeedback())
+            setShowObjectHoverFeedback(false);
+        if(showConnectionHoverFeedback())
+            setShowConnectionHoverFeedback(false);
+    }
+}
+
+bool QDataflowCanvas::showObjectHoverFeedback()
+{
+    return showObjectHoverFeedback_;
+}
+
+void QDataflowCanvas::setShowObjectHoverFeedback(bool show)
+{
+    showObjectHoverFeedback_ = show;
+
+    if(show)
+    {
+        if(showIOletTooltips())
+            setShowIOletTooltips(false);
+    }
+
+    foreach(QDataflowNode *node, nodes_)
+    {
+        node->setAcceptHoverEvents(show);
+    }
+}
+
+bool QDataflowCanvas::showConnectionHoverFeedback()
+{
+    return showConnectionHoverFeedback_;
+}
+
+void QDataflowCanvas::setShowConnectionHoverFeedback(bool show)
+{
+    showConnectionHoverFeedback_ = show;
+
+    if(show)
+    {
+        if(showIOletTooltips())
+            setShowIOletTooltips(false);
+    }
+
+    foreach(QDataflowConnection *conn, connections_)
+    {
+        conn->setAcceptHoverEvents(show);
+    }
+}
+
 void QDataflowCanvas::mouseDoubleClickEvent(QMouseEvent *event)
 {
     QGraphicsItem *item = itemAt(event->pos());
@@ -310,7 +374,7 @@ QDataflowNode::QDataflowNode(QDataflowCanvas *canvas, QDataflowModelNode *modelN
     setFlag(ItemSendsGeometryChanges);
     setFlag(ItemIsSelectable);
     setAcceptedMouseButtons(Qt::LeftButton);
-    setAcceptHoverEvents(true);
+    setAcceptHoverEvents(canvas_->showObjectHoverFeedback());
     setCacheMode(DeviceCoordinateCache);
 
 #if 0
@@ -601,7 +665,7 @@ void QDataflowNode::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
 QDataflowIOlet::QDataflowIOlet(QDataflowNode *node, int index)
     : canvas_(node->canvas()), node_(node), index_(index)
 {
-    setAcceptHoverEvents(true);
+    setAcceptHoverEvents(canvas_->showIOletTooltips());
 }
 
 void QDataflowIOlet::addConnection(QDataflowConnection *connection)
@@ -741,7 +805,7 @@ QDataflowConnection::QDataflowConnection(QDataflowCanvas *canvas, QDataflowModel
 {
     setFlag(ItemIsSelectable);
     setAcceptedMouseButtons(Qt::LeftButton);
-    setAcceptHoverEvents(true);
+    setAcceptHoverEvents(canvas_->showConnectionHoverFeedback());
 
     QDataflowModelOutlet *src = modelConnection->source();
     QDataflowModelInlet *dst = modelConnection->dest();

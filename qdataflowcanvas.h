@@ -64,6 +64,13 @@ public:
 
     void raiseItem(QGraphicsItem *item);
 
+    bool showIOletTooltips();
+    void setShowIOletTooltips(bool show);
+    bool showObjectHoverFeedback();
+    void setShowObjectHoverFeedback(bool show);
+    bool showConnectionHoverFeedback();
+    void setShowConnectionHoverFeedback(bool show);
+
 protected:
     template<typename T>
     T * itemAtT(const QPointF &point);
@@ -95,6 +102,9 @@ private:
     QSet<QDataflowConnection*> ownedConnections_;
     QMap<QDataflowModelNode*, QDataflowNode*> nodes_;
     QMap<QDataflowModelConnection*, QDataflowConnection*> connections_;
+    bool showIOletsTooltips_;
+    bool showObjectHoverFeedback_;
+    bool showConnectionHoverFeedback_;
 };
 
 class QDataflowNode : public QGraphicsItem
