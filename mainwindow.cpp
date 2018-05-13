@@ -141,6 +141,7 @@ MainWindow::MainWindow(QWidget *parent)
     QObject::connect(sendButton, &QPushButton::clicked, this, &MainWindow::processData);
     QObject::connect(model, &QDataflowModel::nodeTextChanged, this, &MainWindow::onNodeTextChanged);
     QObject::connect(model, &QDataflowModel::nodeAdded, this, &MainWindow::onNodeAdded);
+    QObject::connect(canvas->scene(), &QGraphicsScene::selectionChanged, this, &MainWindow::onSelectionChanged);
 
     // set up a small dataflow graph:
     QDataflowModelNode *source = model->create(QPoint(100, 10), "source", 0, 0);
@@ -154,7 +155,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
-
+    QObject::disconnect(canvas->scene(), &QGraphicsScene::selectionChanged, this, &MainWindow::onSelectionChanged);
 }
 
 void MainWindow::complete(QString txt, QStringList &completionList)
@@ -194,6 +195,28 @@ void MainWindow::onNodeTextChanged(QDataflowModelNode *node, QString text)
 {
     Q_UNUSED(text);
     setupNode(node);
+}
+
+void MainWindow::onSelectionChanged()
+{
+    auto selNodes = canvas->selectedNodes();
+    auto selConns = canvas->selectedConnections();
+    QString msg;
+    if(selNodes.isEmpty() && selConns.isEmpty())
+    {
+        msg.sprintf("Selection is empty");
+    }
+    else if(!selNodes.isEmpty())
+    {
+        if(selNodes.size() == 1) msg = QString("Selected node \"%1\"").arg(selNodes[0]->text());
+        else msg = QString("Selected %1 nodes").arg(selNodes.size());
+    }
+    else if(!selConns.isEmpty())
+    {
+        if(selConns.size() == 1) msg = QString("Selected connection %1").arg(reinterpret_cast<long long>(selConns[0]), 1, 16);
+        else msg = QString("Selected %1 connections").arg(selConns.size());
+    }
+    statusBar()->showMessage(msg, 10000);
 }
 
 void MainWindow::onDumpModel()

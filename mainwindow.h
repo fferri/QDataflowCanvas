@@ -39,6 +39,7 @@ private slots:
     void processData();
     void onNodeAdded(QDataflowModelNode *node);
     void onNodeTextChanged(QDataflowModelNode *node, QString text);
+    void onSelectionChanged();
     void onDumpModel();
 };
 
