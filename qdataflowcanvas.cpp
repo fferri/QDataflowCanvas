@@ -634,7 +634,8 @@ QPen QDataflowNode::invalidConnectionPen() const
 void QDataflowNode::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *)
 {
     bool sel = option->state & QStyle::State_Selected,
-            hov = option->state & QStyle::State_MouseOver;
+            hov = canvas()->showObjectHoverFeedback() &&
+                option->state & QStyle::State_MouseOver;
 
     if(sel || hov)
     {
