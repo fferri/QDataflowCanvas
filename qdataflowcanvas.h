@@ -306,6 +306,8 @@ public:
     void updateCompletion();
     void complete();
 
+    void focusOutEvent(QFocusEvent *event);
+
 private:
     QDataflowNode *node_;
     QList<QGraphicsSimpleTextItem*> completionItems_;

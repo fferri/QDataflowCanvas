@@ -1088,6 +1088,12 @@ void QDataflowNodeTextLabel::complete()
     setCompletion(completionList);
 }
 
+void QDataflowNodeTextLabel::focusOutEvent(QFocusEvent *event)
+{
+    if(event->reason() == Qt::MouseFocusReason) return;
+    QGraphicsTextItem::focusOutEvent(event);
+}
+
 QDataflowTooltip::QDataflowTooltip(QGraphicsItem *parentItem, QString text, QPointF offset)
     : QGraphicsItemGroup(parentItem), offset_(offset)
 {
