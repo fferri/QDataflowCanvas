@@ -72,10 +72,14 @@ public:
     void setShowConnectionHoverFeedback(bool show);
     qreal gridSize();
     void setGridSize(qreal sz);
+    bool drawGrid();
+    void setDrawGrid(bool draw);
 
 protected:
     template<typename T>
     T * itemAtT(const QPointF &point);
+
+    void drawBackground(QPainter *painter, const QRectF &rect);
 
 protected slots:
     void mouseDoubleClickEvent(QMouseEvent *event);
@@ -108,6 +112,7 @@ private:
     bool showObjectHoverFeedback_;
     bool showConnectionHoverFeedback_;
     qreal gridSize_;
+    bool drawGrid_;
 };
 
 class QDataflowNode : public QGraphicsItem

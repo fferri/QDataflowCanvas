@@ -19,6 +19,8 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
+#include <QtMath>
+
 #include <QDebug>
 
 #include <QGraphicsScene>
@@ -59,6 +61,7 @@ QDataflowCanvas::QDataflowCanvas(QWidget *parent)
     showConnectionHoverFeedback_ = false;
     showIOletsTooltips_ = false;
     gridSize_ = 1.0;
+    drawGrid_ = false;
 }
 
 QDataflowCanvas::~QDataflowCanvas()
@@ -258,6 +261,33 @@ qreal QDataflowCanvas::gridSize()
 void QDataflowCanvas::setGridSize(qreal sz)
 {
     gridSize_ = qMax(1.0, sz);
+}
+
+bool QDataflowCanvas::drawGrid()
+{
+    return drawGrid_;
+}
+
+void QDataflowCanvas::setDrawGrid(bool draw)
+{
+    drawGrid_ = draw;
+}
+
+void QDataflowCanvas::drawBackground(QPainter *painter, const QRectF &rect)
+{
+    QGraphicsView::drawBackground(painter, rect);
+
+    if(drawGrid_)
+    {
+        painter->setPen(QPen(Qt::gray));
+        for(qreal y = qCeil(rect.top() / gridSize_) * gridSize_; y <= rect.bottom(); y += gridSize_)
+        {
+            for(qreal x = qCeil(rect.left() / gridSize_) * gridSize_; x <= rect.right(); x += gridSize_)
+            {
+                painter->drawPoint(int(x), int(y));
+            }
+        }
+    }
 }
 
 void QDataflowCanvas::mouseDoubleClickEvent(QMouseEvent *event)

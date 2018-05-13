@@ -132,6 +132,7 @@ MainWindow::MainWindow(QWidget *parent)
     canvas->setShowConnectionHoverFeedback(true);
     canvas->setShowIOletTooltips(true);
     canvas->setGridSize(10);
+    canvas->setDrawGrid(true);
 
     QDataflowModel *model = canvas->model();
 
