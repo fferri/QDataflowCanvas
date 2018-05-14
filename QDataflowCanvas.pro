@@ -18,11 +18,13 @@ SOURCES += \
 HEADERS += \
     mainwindow.h \
     qdataflowcanvas.h \
-    qdataflowmodel.h
+    qdataflowmodel.h \
+    utility.h
 
 FORMS += \
     mainwindow.ui
 
 DEFINES += \
     QT_DISABLE_DEPRECATED_BEFORE=0x060000 \
-    QT_RESTRICTED_CAST_FROM_ASCII
+    QT_RESTRICTED_CAST_FROM_ASCII \
+    QT_NO_KEYWORDS

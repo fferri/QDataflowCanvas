@@ -17,6 +17,7 @@
  */
 #include "qdataflowmodel.h"
 #include "qdataflowcanvas.h"
+#include "utility.h"
 
 QDataflowModel::QDataflowModel(QObject *parent)
     : QObject(parent)
@@ -49,7 +50,7 @@ QDataflowModelNode * QDataflowModel::create(const QPoint &pos, const QString &te
     QObject::connect(node, &QDataflowModelNode::textChanged, this, &QDataflowModel::onTextChanged);
     QObject::connect(node, &QDataflowModelNode::inletCountChanged, this, &QDataflowModel::onInletCountChanged);
     QObject::connect(node, &QDataflowModelNode::outletCountChanged, this, &QDataflowModel::onOutletCountChanged);
-    emit nodeAdded(node);
+    Q_EMIT nodeAdded(node);
     return node;
 }
 
@@ -57,11 +58,11 @@ void QDataflowModel::remove(QDataflowModelNode *node)
 {
     if(!node) return;
     if(!nodes_.contains(node)) return;
-    foreach(QDataflowModelInlet *inlet, node->inlets())
-        foreach(QDataflowModelConnection *conn, inlet->connections())
+    for(auto *inlet : as_const(node->inlets()))
+        for(auto *conn : as_const(inlet->connections()))
             removeConnection(conn);
-    foreach(QDataflowModelOutlet *outlet, node->outlets())
-        foreach(QDataflowModelConnection *conn, outlet->connections())
+    for(auto *outlet : as_const(node->outlets()))
+        for(auto *conn : as_const(outlet->connections()))
             removeConnection(conn);
     QObject::disconnect(node, &QDataflowModelNode::validChanged, this, &QDataflowModel::onValidChanged);
     QObject::disconnect(node, &QDataflowModelNode::posChanged, this, &QDataflowModel::onPosChanged);
@@ -69,7 +70,7 @@ void QDataflowModel::remove(QDataflowModelNode *node)
     QObject::disconnect(node, &QDataflowModelNode::inletCountChanged, this, &QDataflowModel::onInletCountChanged);
     QObject::disconnect(node, &QDataflowModelNode::outletCountChanged, this, &QDataflowModel::onOutletCountChanged);
     nodes_.remove(node);
-    emit nodeRemoved(node);
+    Q_EMIT nodeRemoved(node);
 }
 
 QDataflowModelConnection * QDataflowModel::connect(QDataflowModelConnection *conn)
@@ -92,7 +93,7 @@ QDataflowModelConnection * QDataflowModel::connect(QDataflowModelNode *sourceNod
 void QDataflowModel::disconnect(QDataflowModelConnection *conn)
 {
     if(!conn) return;
-    foreach(QDataflowModelConnection *conn, findConnections(conn))
+    for(auto *conn : as_const(findConnections(conn)))
     {
         removeConnection(conn);
     }
@@ -101,7 +102,7 @@ void QDataflowModel::disconnect(QDataflowModelConnection *conn)
 void QDataflowModel::disconnect(QDataflowModelNode *sourceNode, int sourceOutlet, QDataflowModelNode *destNode, int destInlet)
 {
     if(!sourceNode || !destNode) return;
-    foreach(QDataflowModelConnection *conn, findConnections(sourceNode, sourceOutlet, destNode, destInlet))
+    for(auto *conn : as_const(findConnections(sourceNode, sourceOutlet, destNode, destInlet)))
     {
         removeConnection(conn);
     }
@@ -130,7 +131,7 @@ void QDataflowModel::addConnection(QDataflowModelConnection *conn)
     connections_.insert(conn);
     conn->source()->addConnection(conn);
     conn->dest()->addConnection(conn);
-    emit connectionAdded(conn);
+    Q_EMIT connectionAdded(conn);
 }
 
 void QDataflowModel::removeConnection(QDataflowModelConnection *conn)
@@ -140,7 +141,7 @@ void QDataflowModel::removeConnection(QDataflowModelConnection *conn)
     conn->source()->removeConnection(conn);
     conn->dest()->removeConnection(conn);
     connections_.remove(conn);
-    emit connectionRemoved(conn);
+    Q_EMIT connectionRemoved(conn);
 }
 
 QList<QDataflowModelConnection*> QDataflowModel::findConnections(QDataflowModelConnection *conn) const
@@ -159,7 +160,7 @@ QList<QDataflowModelConnection*> QDataflowModel::findConnections(QDataflowModelN
 {
     if(!sourceNode || !destNode) return QList<QDataflowModelConnection*>();
     QList<QDataflowModelConnection*> ret;
-    foreach(QDataflowModelConnection *conn, connections_)
+    for(auto *conn : as_const(connections_))
     {
         QDataflowModelOutlet *src = conn->source();
         QDataflowModelInlet *dst = conn->dest();
@@ -172,31 +173,31 @@ QList<QDataflowModelConnection*> QDataflowModel::findConnections(QDataflowModelN
 void QDataflowModel::onValidChanged(bool valid)
 {
     if(QDataflowModelNode *node = dynamic_cast<QDataflowModelNode*>(sender()))
-        emit nodeValidChanged(node, valid);
+        Q_EMIT nodeValidChanged(node, valid);
 }
 
 void QDataflowModel::onPosChanged(const QPoint &pos)
 {
     if(QDataflowModelNode *node = dynamic_cast<QDataflowModelNode*>(sender()))
-        emit nodePosChanged(node, pos);
+        Q_EMIT nodePosChanged(node, pos);
 }
 
 void QDataflowModel::onTextChanged(const QString &text)
 {
     if(QDataflowModelNode *node = dynamic_cast<QDataflowModelNode*>(sender()))
-        emit nodeTextChanged(node, text);
+        Q_EMIT nodeTextChanged(node, text);
 }
 
 void QDataflowModel::onInletCountChanged(int count)
 {
     if(QDataflowModelNode *node = dynamic_cast<QDataflowModelNode*>(sender()))
-        emit nodeInletCountChanged(node, count);
+        Q_EMIT nodeInletCountChanged(node, count);
 }
 
 void QDataflowModel::onOutletCountChanged(int count)
 {
     if(QDataflowModelNode *node = dynamic_cast<QDataflowModelNode*>(sender()))
-        emit nodeOutletCountChanged(node, count);
+        Q_EMIT nodeOutletCountChanged(node, count);
 }
 
 QDataflowModelNode::QDataflowModelNode(QDataflowModel *parent, const QPoint &pos, const QString &text, int inletCount, int outletCount)
@@ -209,8 +210,8 @@ QDataflowModelNode::QDataflowModelNode(QDataflowModel *parent, const QPoint &pos
 QDataflowModelNode::QDataflowModelNode(QDataflowModel *parent, const QPoint &pos, const QString &text, const QStringList &inletTypes, const QStringList &outletTypes)
     : QObject(parent), valid_(false), pos_(pos), text_(text), dataflowMetaObject_()
 {
-    foreach(const QString &inletType, inletTypes) addInlet(inletType);
-    foreach(const QString &outletType, outletTypes) addOutlet(outletType);
+    for(auto &inletType : inletTypes) addInlet(inletType);
+    for(auto &outletType : outletTypes) addOutlet(outletType);
 }
 
 QDataflowModel * QDataflowModelNode::model()
@@ -289,21 +290,21 @@ void QDataflowModelNode::setValid(bool valid)
 {
     if(valid_ == valid) return;
     valid_ = valid;
-    emit validChanged(valid);
+    Q_EMIT validChanged(valid);
 }
 
 void QDataflowModelNode::setPos(const QPoint &pos)
 {
     if(pos_ == pos) return;
     pos_ = pos;
-    emit posChanged(pos);
+    Q_EMIT posChanged(pos);
 }
 
 void QDataflowModelNode::setText(const QString &text)
 {
     if(text_ == text) return;
     text_ = text;
-    emit textChanged(text);
+    Q_EMIT textChanged(text);
 }
 
 void QDataflowModelNode::addInlet(const QString &name, const QString &type)
@@ -315,10 +316,10 @@ void QDataflowModelNode::removeLastInlet()
 {
     if(inlets_.isEmpty()) return;
     QDataflowModelInlet *inlet = inlets_.back();
-    foreach(QDataflowModelConnection *conn, inlet->connections())
+    for(auto *conn : as_const(inlet->connections()))
         model()->disconnect(conn);
     inlets_.pop_back();
-    emit inletCountChanged(inletCount());
+    Q_EMIT inletCountChanged(inletCount());
 }
 
 void QDataflowModelNode::setInletCount(int count)
@@ -335,7 +336,7 @@ void QDataflowModelNode::setInletCount(int count)
 
     blockSignals(shouldBlockSignals);
 
-    emit inletCountChanged(count);
+    Q_EMIT inletCountChanged(count);
 }
 
 void QDataflowModelNode::setInletTypes(const QStringList &types)
@@ -347,14 +348,14 @@ void QDataflowModelNode::setInletTypes(const QStringList &types)
     while(inletCount() > 0)
         removeLastInlet();
 
-    foreach(const QString &type, types)
-        addInlet("", type);
+    for(auto &type : types)
+        addInlet({}, type);
 
     blockSignals(shouldBlockSignals);
 
     int newCount = inletCount();
     if(oldCount != newCount)
-        emit inletCountChanged(newCount);
+        Q_EMIT inletCountChanged(newCount);
 }
 
 void QDataflowModelNode::setInletTypes(std::initializer_list<const char*> types_)
@@ -379,10 +380,10 @@ void QDataflowModelNode::removeLastOutlet()
 {
     if(outlets_.isEmpty()) return;
     QDataflowModelOutlet *outlet = outlets_.back();
-    foreach(QDataflowModelConnection *conn, outlet->connections())
+    for(auto *conn : as_const(outlet->connections()))
         model()->disconnect(conn);
     outlets_.pop_back();
-    emit outletCountChanged(outletCount());
+    Q_EMIT outletCountChanged(outletCount());
 }
 
 void QDataflowModelNode::setOutletCount(int count)
@@ -399,7 +400,7 @@ void QDataflowModelNode::setOutletCount(int count)
 
     blockSignals(shouldBlockSignals);
 
-    emit outletCountChanged(count);
+    Q_EMIT outletCountChanged(count);
 }
 
 void QDataflowModelNode::setOutletTypes(const QStringList &types)
@@ -411,14 +412,14 @@ void QDataflowModelNode::setOutletTypes(const QStringList &types)
     while(outletCount() > 0)
         removeLastOutlet();
 
-    foreach(const QString &type, types)
-        addOutlet("", type);
+    for(auto &type : types)
+        addOutlet({}, type);
 
     blockSignals(shouldBlockSignals);
 
     int newCount = outletCount();
     if(oldCount != newCount)
-        emit outletCountChanged(newCount);
+        Q_EMIT outletCountChanged(newCount);
 }
 
 void QDataflowModelNode::setOutletTypes(std::initializer_list<const char *> types_)
@@ -439,7 +440,7 @@ void QDataflowModelNode::addInlet(QDataflowModelInlet *inlet)
     if(!inlet) return;
     inlet->setParent(this);
     inlets_.append(inlet);
-    emit inletCountChanged(inletCount());
+    Q_EMIT inletCountChanged(inletCount());
 }
 
 void QDataflowModelNode::addOutlet(QDataflowModelOutlet *outlet)
@@ -447,7 +448,7 @@ void QDataflowModelNode::addOutlet(QDataflowModelOutlet *outlet)
     if(!outlet) return;
     outlet->setParent(this);
     outlets_.append(outlet);
-    emit outletCountChanged(outletCount());
+    Q_EMIT outletCountChanged(outletCount());
 }
 
 QDebug operator<<(QDebug debug, const QDataflowModelNode &node)
@@ -604,7 +605,7 @@ void QDataflowMetaObject::onDataReceved(int inlet, void *data)
 
 void QDataflowMetaObject::sendData(int outletIndex, void *data)
 {
-    foreach(QDataflowModelConnection *conn, outlet(outletIndex)->connections())
+    for(auto *conn : as_const(outlet(outletIndex)->connections()))
     {
         QDataflowMetaObject *mo = conn->dest()->node()->dataflowMetaObject();
         if(mo)

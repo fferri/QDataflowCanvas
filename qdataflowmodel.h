@@ -62,7 +62,7 @@ protected:
     virtual QList<QDataflowModelConnection*> findConnections(QDataflowModelNode *sourceNode, int sourceOutlet, QDataflowModelNode *destNode, int destInlet) const;
     virtual QList<QDataflowModelConnection*> findConnections(QDataflowModelOutlet *source, QDataflowModelInlet *dest) const;
 
-signals:
+Q_SIGNALS:
     void nodeAdded(QDataflowModelNode *node);
     void nodeRemoved(QDataflowModelNode *node);
     void nodeValidChanged(QDataflowModelNode *node, bool valid);
@@ -73,7 +73,7 @@ signals:
     void connectionAdded(QDataflowModelConnection *conn);
     void connectionRemoved(QDataflowModelConnection *conn);
 
-private slots:
+private Q_SLOTS:
     virtual void onValidChanged(bool valid);
     virtual void onPosChanged(const QPoint &pos);
     virtual void onTextChanged(const QString &text);
@@ -109,14 +109,14 @@ public:
     QDataflowModelOutlet * outlet(int index) const;
     int outletCount() const;
 
-signals:
+Q_SIGNALS:
     void validChanged(bool valid);
     void posChanged(const QPoint &pos);
     void textChanged(const QString &text);
     void inletCountChanged(int count);
     void outletCountChanged(int count);
 
-public slots:
+public Q_SLOTS:
     void setPos(const QPoint &pos);
     void setText(const QString &text);
     void addInlet(const QString &name = {}, const QString &type = QStringLiteral("*"));
@@ -130,7 +130,7 @@ public slots:
     void setOutletTypes(const QStringList &types);
     void setOutletTypes(std::initializer_list<const char *> types);
 
-protected slots:
+protected Q_SLOTS:
     void addInlet(QDataflowModelInlet *inlet);
     void addOutlet(QDataflowModelOutlet *outlet);
 
@@ -262,7 +262,7 @@ public:
 private:
     QDebug debug() const;
 
-private slots:
+private Q_SLOTS:
     void onNodeAdded(QDataflowModelNode *node);
     void onNodeRemoved(QDataflowModelNode *node);
     void onNodePosChanged(QDataflowModelNode *node, const QPoint &pos);

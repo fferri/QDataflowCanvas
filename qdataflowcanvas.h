@@ -56,7 +56,7 @@ public:
     QList<QDataflowNode*> selectedNodes();
     QList<QDataflowConnection*> selectedConnections();
 
-    bool isSomeNodeInEditMode();
+    bool isSomeNodeInEditMode() const;
 
     QDataflowTextCompletion * completion() const {return completion_;}
     void setCompletion(QDataflowTextCompletion *completion) {completion_ = completion;}
@@ -82,7 +82,7 @@ protected:
     void mouseDoubleClickEvent(QMouseEvent *event) override;
     void keyPressEvent(QKeyEvent *event) override;
 
-protected slots:
+protected Q_SLOTS:
     void itemTextEditorTextChange();
     void onNodeAdded(QDataflowModelNode *mdlnode);
     void onNodeRemoved(QDataflowModelNode *mdlnode);
@@ -345,7 +345,8 @@ public:
 template<typename T>
 T * QDataflowCanvas::itemAtT(const QPointF &point)
 {
-    foreach(QGraphicsItem *item, scene()->items(point, Qt::IntersectsItemShape, Qt::DescendingOrder, transform()))
+    auto const items = scene()->items(point, Qt::IntersectsItemShape, Qt::DescendingOrder, transform());
+    for(QGraphicsItem *item : items)
     {
          if(T *itemT = dynamic_cast<T*>(item))
              return itemT;

@@ -16,8 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "mainwindow.h"
+#include "utility.h"
 #define _USE_MATH_DEFINES
-#include <math.h>
+#include <cmath>
+#include <type_traits>
 #include <QMenu>
 #include <QDebug>
 
@@ -157,7 +159,7 @@ MainWindow::MainWindow(QWidget *parent)
 QStringList MainWindow::complete(const QString &txt)
 {
     QStringList completionList;
-    foreach(QString className, classList)
+    for (auto &className : as_const(classList))
         if(className.startsWith(txt) && className.length() > txt.length())
             completionList << className;
     return completionList;
@@ -221,12 +223,9 @@ void MainWindow::onDumpModel()
 {
     QDataflowModel *model = canvas->model();
 
-    foreach(QDataflowModelNode *node, model->nodes())
-    {
+    for (auto *node : as_const(model->nodes()))
         qDebug() << "DUMP: node: " << node;
-    }
-    foreach(QDataflowModelConnection *conn, model->connections())
-    {
+
+    for (auto *conn : as_const(model->connections()))
         qDebug() << "DUMP: connection: " << conn;
-    }
 }

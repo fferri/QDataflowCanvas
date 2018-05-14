@@ -16,9 +16,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "qdataflowcanvas.h"
+#include "utility.h"
 
 #define _USE_MATH_DEFINES
-#include <math.h>
+#include <algorithm>
+#include <cmath>
 
 #include <QtMath>
 
@@ -71,15 +73,11 @@ QDataflowCanvas::~QDataflowCanvas()
 {
     scene()->clearSelection();
 
-    foreach(QDataflowNode *node, ownedNodes_)
-    {
+    for (auto *node : as_const(ownedNodes_))
         delete node;
-    }
 
-    foreach(QDataflowConnection *conn, ownedConnections_)
-    {
+    for (auto *conn : as_const(ownedConnections_))
         delete conn;
-    }
 }
 
 QDataflowModel * QDataflowCanvas::model()
@@ -118,42 +116,38 @@ void QDataflowCanvas::setModel(QDataflowModel *model)
 
 QList<QDataflowNode*> QDataflowCanvas::selectedNodes()
 {
+    auto const isSelected = [this](QDataflowNode *node){
+        return node->scene() == scene() && node->isSelected();
+    };
     QList<QDataflowNode*> ret;
-    foreach(QDataflowNode *node, nodes_)
-    {
-        if(node->scene() == scene() && node->isSelected())
-            ret.push_back(node);
-    }
+    std::copy_if(nodes_.begin(), nodes_.end(), std::back_inserter(ret), isSelected);
     return ret;
 }
 
 QList<QDataflowConnection*> QDataflowCanvas::selectedConnections()
 {
+    auto const isSelected = [this](QDataflowConnection *conn){
+        return conn->scene() == scene() && conn->isSelected();
+    };
     QList<QDataflowConnection*> ret;
-    foreach(QDataflowConnection *conn, connections_)
-    {
-        if(conn->scene() == scene() && conn->isSelected())
-            ret.push_back(conn);
-    }
+    std::copy_if(connections_.begin(), connections_.end(), std::back_inserter(ret), isSelected);
     return ret;
 }
 
-bool QDataflowCanvas::isSomeNodeInEditMode()
+bool QDataflowCanvas::isSomeNodeInEditMode() const
 {
-    foreach(QDataflowNode *node, nodes_)
-    {
-        if(node->scene() == scene() && node->isInEditMode())
-            return true;
-    }
-    return false;
+    auto const inEditMode = [this](QDataflowNode *node){
+        return node->scene() == scene() && node->isInEditMode();
+    };
+    return std::any_of(nodes_.begin(), nodes_.end(), inEditMode);
 }
 
 QDataflowNode * QDataflowCanvas::node(QDataflowModelNode *node)
 {
-    QMap<QDataflowModelNode*, QDataflowNode*>::Iterator it = nodes_.find(node);
+    auto it = nodes_.find(node);
     if(it == nodes_.end())
     {
-        qDebug() << "WARNING:" << this << "does not know about" << node;
+        qWarning() << this << "does not know about" << node;
         return {};
     }
     return *it;
@@ -173,7 +167,7 @@ QDataflowConnection * QDataflowCanvas::connection(QDataflowModelConnection *conn
 void QDataflowCanvas::raiseItem(QGraphicsItem *item)
 {
     qreal maxZ = 0;
-    foreach(QGraphicsItem *item1, item->collidingItems(Qt::IntersectsItemBoundingRect))
+    for(auto *item1 : as_const(item->collidingItems(Qt::IntersectsItemBoundingRect)))
         maxZ = qMax(maxZ, item1->zValue());
     item->setZValue(maxZ + 1);
 
@@ -182,7 +176,7 @@ void QDataflowCanvas::raiseItem(QGraphicsItem *item)
         for(int i = 0; i < node->inletCount(); i++)
         {
             QDataflowInlet *inlet = node->inlet(i);
-            foreach(QDataflowConnection *conn, inlet->connections())
+            for(auto *conn : as_const(inlet->connections()))
             {
                 raiseItem(conn);
             }
@@ -190,7 +184,7 @@ void QDataflowCanvas::raiseItem(QGraphicsItem *item)
         for(int i = 0; i < node->outletCount(); i++)
         {
             QDataflowOutlet *outlet = node->outlet(i);
-            foreach(QDataflowConnection *conn, outlet->connections())
+            for(auto *conn : as_const(outlet->connections()))
             {
                 raiseItem(conn);
             }
@@ -231,7 +225,7 @@ void QDataflowCanvas::setShowObjectHoverFeedback(bool show)
             setShowIOletTooltips(false);
     }
 
-    foreach(QDataflowNode *node, nodes_)
+    for (auto *node : as_const(nodes_))
     {
         node->setAcceptHoverEvents(show);
     }
@@ -252,7 +246,7 @@ void QDataflowCanvas::setShowConnectionHoverFeedback(bool show)
             setShowIOletTooltips(false);
     }
 
-    foreach(QDataflowConnection *conn, connections_)
+    for(auto *conn : as_const(connections_))
     {
         conn->setAcceptHoverEvents(show);
     }
@@ -315,12 +309,12 @@ void QDataflowCanvas::keyPressEvent(QKeyEvent *event)
 
     if(event->key() == Qt::Key_Backspace && !isSomeNodeInEditMode())
     {
-        foreach(QDataflowConnection *conn, selectedConnections())
+        for(auto *conn : as_const(selectedConnections()))
             model()->disconnect(
                         conn->source()->node()->modelNode(), conn->source()->index(),
                         conn->dest()->node()->modelNode(), conn->dest()->index()
                         );
-        foreach(QDataflowNode *node, selectedNodes())
+        for(auto *node : as_const(selectedNodes()))
             model()->remove(node->modelNode());
         event->accept();
     }
@@ -466,7 +460,7 @@ void QDataflowNode::setInletCount(int count, bool skipAdjust)
     while(inlets_.length() > count)
     {
         QDataflowInlet *lastInlet = inlets_.back();
-        foreach(QDataflowConnection *conn, lastInlet->connections())
+        for(auto *conn : as_const(lastInlet->connections()))
             canvas()->scene()->removeItem(conn);
         canvas()->scene()->removeItem(lastInlet);
         inlets_.pop_back();
@@ -492,7 +486,7 @@ void QDataflowNode::setOutletCount(int count, bool skipAdjust)
     while(outlets_.length() > count)
     {
         QDataflowOutlet *lastOutlet = outlets_.back();
-        foreach(QDataflowConnection *conn, lastOutlet->connections())
+        for(auto *conn : as_const(lastOutlet->connections()))
             canvas()->scene()->removeItem(conn);
         canvas()->scene()->removeItem(lastOutlet);
         outlets_.pop_back();
@@ -542,12 +536,12 @@ bool QDataflowNode::isValid() const
 
 void QDataflowNode::adjustConnections() const
 {
-    foreach(QDataflowInlet *inlet, inlets_)
+    for(auto *inlet : inlets_)
     {
         inlet->adjustConnections();
     }
 
-    foreach(QDataflowOutlet *outlet, outlets_)
+    for(auto *outlet : outlets_)
     {
         outlet->adjustConnections();
     }
@@ -756,7 +750,7 @@ QList<QDataflowConnection*> QDataflowIOlet::connections() const
 
 void QDataflowIOlet::adjustConnections() const
 {
-    foreach(QDataflowConnection *conn, connections_)
+    for(auto *conn : connections_)
     {
         conn->adjust();
     }
@@ -1004,7 +998,7 @@ void QDataflowNodeTextLabel::setCompletion(const QStringList &list)
     completionActive_ = true;
 
     qreal y = boundingRect().height() + 1;
-    foreach(QString str, list)
+    for(auto &str : list)
     {
         QGraphicsRectItem *rectItem = new QGraphicsRectItem(this);
         rectItem->setPos(0, y);
@@ -1015,7 +1009,7 @@ void QDataflowNodeTextLabel::setCompletion(const QStringList &list)
         y += item->boundingRect().height();
     }
     qreal maxw = 0;
-    foreach(QGraphicsSimpleTextItem *item, completionItems_)
+    for(auto *item : as_const(completionItems_))
         maxw = std::max(maxw, item->boundingRect().width());
     for(int i = 0; i < completionItems_.length(); i++)
     {
@@ -1031,13 +1025,13 @@ void QDataflowNodeTextLabel::setCompletion(const QStringList &list)
 
 void QDataflowNodeTextLabel::clearCompletion()
 {
-    foreach(QGraphicsItem *item, completionItems_)
+    for(auto *item : as_const(completionItems_))
     {
         node_->canvas()->scene()->removeItem(item);
         delete item;
     }
     completionItems_.clear();
-    foreach(QGraphicsItem *item, completionRectItems_)
+    for(auto *item : as_const(completionRectItems_))
     {
         node_->canvas()->scene()->removeItem(item);
         delete item;

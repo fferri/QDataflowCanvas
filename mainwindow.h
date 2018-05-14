@@ -34,7 +34,7 @@ private:
     QDataflowModelNode *sourceNode;
     QStringList classList;
 
-private slots:
+private Q_SLOTS:
     void setupNode(QDataflowModelNode *node);
     void processData();
     void onNodeAdded(QDataflowModelNode *node);
