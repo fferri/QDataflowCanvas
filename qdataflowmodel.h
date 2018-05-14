@@ -1,5 +1,6 @@
 /* QDataflowCanvas - a dataflow widget for Qt
  * Copyright (C) 2017 Federico Ferri
+ * Copyright (C) 2018 Kuba Ober
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,6 +25,7 @@
 #include <QString>
 #include <QStringList>
 #include <QDebug>
+#include <initializer_list>
 
 class QDataflowModelNode;
 class QDataflowModelIOlet;
@@ -36,14 +38,14 @@ class QDataflowModel : public QObject
 {
     Q_OBJECT
 public:
-    explicit QDataflowModel(QObject *parent = 0);
+    explicit QDataflowModel(QObject *parent = {});
 
 protected:
-    virtual QDataflowModelNode * newNode(QPoint pos, QString text, int inletCount, int outletCount);
+    virtual QDataflowModelNode * newNode(const QPoint &pos, const QString &text, int inletCount, int outletCount);
     virtual QDataflowModelConnection * newConnection(QDataflowModelNode *sourceNode, int sourceOutlet, QDataflowModelNode *destNode, int destInlet);
 
 public:
-    virtual QDataflowModelNode * create(QPoint pos, QString text, int inletCount, int outletCount);
+    virtual QDataflowModelNode * create(const QPoint &pos, const QString &text, int inletCount, int outletCount);
     virtual void remove(QDataflowModelNode *node);
     virtual QDataflowModelConnection * connect(QDataflowModelConnection *conn);
     virtual QDataflowModelConnection * connect(QDataflowModelNode *sourceNode, int sourceOutlet, QDataflowModelNode *destNode, int destInlet);
@@ -60,23 +62,21 @@ protected:
     virtual QList<QDataflowModelConnection*> findConnections(QDataflowModelNode *sourceNode, int sourceOutlet, QDataflowModelNode *destNode, int destInlet) const;
     virtual QList<QDataflowModelConnection*> findConnections(QDataflowModelOutlet *source, QDataflowModelInlet *dest) const;
 
-signals:
+Q_SIGNALS:
     void nodeAdded(QDataflowModelNode *node);
     void nodeRemoved(QDataflowModelNode *node);
     void nodeValidChanged(QDataflowModelNode *node, bool valid);
-    void nodePosChanged(QDataflowModelNode *node, QPoint pos);
-    void nodeTextChanged(QDataflowModelNode *node, QString text);
+    void nodePosChanged(QDataflowModelNode *node, const QPoint &pos);
+    void nodeTextChanged(QDataflowModelNode *node, const QString &text);
     void nodeInletCountChanged(QDataflowModelNode *node, int count);
     void nodeOutletCountChanged(QDataflowModelNode *node, int count);
     void connectionAdded(QDataflowModelConnection *conn);
     void connectionRemoved(QDataflowModelConnection *conn);
 
-public slots:
-
-private slots:
+private Q_SLOTS:
     virtual void onValidChanged(bool valid);
-    virtual void onPosChanged(QPoint pos);
-    virtual void onTextChanged(QString text);
+    virtual void onPosChanged(const QPoint &pos);
+    virtual void onTextChanged(const QString &text);
     virtual void onInletCountChanged(int count);
     virtual void onOutletCountChanged(int count);
 
@@ -89,8 +89,8 @@ class QDataflowModelNode : public QObject
 {
     Q_OBJECT
 protected:
-    explicit QDataflowModelNode(QDataflowModel *parent, QPoint pos, QString text, int inletCount, int outletCount);
-    explicit QDataflowModelNode(QDataflowModel *parent, QPoint pos, QString text, QStringList inletTypes, QStringList outletTypes);
+    explicit QDataflowModelNode(QDataflowModel *parent, const QPoint &pos, const QString &text, int inletCount, int outletCount);
+    explicit QDataflowModelNode(QDataflowModel *parent, const QPoint &pos, const QString &text, const QStringList &inletTypes, const QStringList &outletTypes);
 
 public:
     QDataflowModel * model();
@@ -109,28 +109,28 @@ public:
     QDataflowModelOutlet * outlet(int index) const;
     int outletCount() const;
 
-signals:
+Q_SIGNALS:
     void validChanged(bool valid);
-    void posChanged(QPoint pos);
-    void textChanged(QString text);
+    void posChanged(const QPoint &pos);
+    void textChanged(const QString &text);
     void inletCountChanged(int count);
     void outletCountChanged(int count);
 
-public slots:
-    void setPos(QPoint pos);
+public Q_SLOTS:
+    void setPos(const QPoint &pos);
     void setText(const QString &text);
-    void addInlet(QString name = "", QString type = "*");
+    void addInlet(const QString &name = {}, const QString &type = QStringLiteral("*"));
     void removeLastInlet();
     void setInletCount(int count);
-    void setInletTypes(QStringList types);
+    void setInletTypes(const QStringList &types);
     void setInletTypes(std::initializer_list<const char *> types);
-    void addOutlet(QString name = "", QString type = "*");
+    void addOutlet(const QString name = {}, const QString type = QStringLiteral("*"));
     void removeLastOutlet();
     void setOutletCount(int count);
-    void setOutletTypes(QStringList types);
+    void setOutletTypes(const QStringList &types);
     void setOutletTypes(std::initializer_list<const char *> types);
 
-protected slots:
+protected Q_SLOTS:
     void addInlet(QDataflowModelInlet *inlet);
     void addOutlet(QDataflowModelOutlet *outlet);
 
@@ -152,7 +152,7 @@ class QDataflowModelIOlet : public QObject
 {
     Q_OBJECT
 protected:
-    explicit QDataflowModelIOlet(QDataflowModelNode *parent, int index, QString name = "", QString type = "*");
+    explicit QDataflowModelIOlet(QDataflowModelNode *parent, int index, const QString &name = {}, const QString &type = QStringLiteral("*"));
 
 public:
     QDataflowModel * model();
@@ -166,10 +166,6 @@ public:
     void removeConnection(QDataflowModelConnection *conn);
     QList<QDataflowModelConnection*> connections() const;
 
-signals:
-
-public slots:
-
 private:
     QList<QDataflowModelConnection*> connections_;
     QDataflowModelNode *node_;
@@ -182,17 +178,12 @@ class QDataflowModelInlet : public QDataflowModelIOlet
 {
     Q_OBJECT
 protected:
-    explicit QDataflowModelInlet(QDataflowModelNode *parent, int index, QString name = "", QString type = "*");
+    explicit QDataflowModelInlet(QDataflowModelNode *parent, int index, const QString &name = {}, const QString &type = QStringLiteral("*"));
 
 public:
     bool canAcceptConnectionFrom(QDataflowModelOutlet *outlet);
 
-signals:
-
-public slots:
-
 private:
-
     friend class QDataflowModelNode;
 };
 
@@ -203,17 +194,12 @@ class QDataflowModelOutlet : public QDataflowModelIOlet
 {
     Q_OBJECT
 protected:
-    explicit QDataflowModelOutlet(QDataflowModelNode *parent, int index, QString name = "", QString type = "*");
+    explicit QDataflowModelOutlet(QDataflowModelNode *parent, int index, const QString &name = {}, const QString &type = QStringLiteral("*"));
 
 public:
     bool canMakeConnectionTo(QDataflowModelInlet *inlet);
 
-signals:
-
-public slots:
-
 private:
-
     friend class QDataflowModelNode;
 };
 
@@ -232,10 +218,6 @@ public:
     QDataflowModelOutlet * source() const;
     QDataflowModelInlet * dest() const;
 
-signals:
-
-public slots:
-
 private:
     QDataflowModelOutlet *source_;
     QDataflowModelInlet *dest_;
@@ -250,7 +232,7 @@ class QDataflowMetaObject
 {
 public:
     QDataflowMetaObject(QDataflowModelNode *node);
-    virtual ~QDataflowMetaObject() {}
+    virtual ~QDataflowMetaObject() = default;
 
     QDataflowModelNode * node() {return node_;}
     void setNode(QDataflowModelNode *node) {node_ = node;}
@@ -280,11 +262,11 @@ public:
 private:
     QDebug debug() const;
 
-private slots:
+private Q_SLOTS:
     void onNodeAdded(QDataflowModelNode *node);
     void onNodeRemoved(QDataflowModelNode *node);
-    void onNodePosChanged(QDataflowModelNode *node, QPoint pos);
-    void onNodeTextChanged(QDataflowModelNode *node, QString text);
+    void onNodePosChanged(QDataflowModelNode *node, const QPoint &pos);
+    void onNodeTextChanged(QDataflowModelNode *node, const QString &text);
     void onNodeInletCountChanged(QDataflowModelNode *node, int count);
     void onNodeOutletCountChanged(QDataflowModelNode *node, int count);
     void onConnectionAdded(QDataflowModelConnection *conn);

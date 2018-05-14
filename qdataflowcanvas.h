@@ -1,5 +1,6 @@
 /* QDataflowCanvas - a dataflow widget for Qt
  * Copyright (C) 2017 Federico Ferri
+ * Copyright (C) 2018 Kuba Ober
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,12 +18,8 @@
 #ifndef QDATAFLOWCANVAS_H
 #define QDATAFLOWCANVAS_H
 
-#include <QGraphicsScene>
 #include <QGraphicsItem>
 #include <QGraphicsView>
-#include <QGraphicsSceneMouseEvent>
-#include <QMouseEvent>
-#include <QLineEdit>
 
 #include "qdataflowmodel.h"
 
@@ -33,6 +30,8 @@ class QDataflowConnection;
 class QDataflowTextCompletion;
 class QDataflowNodeTextLabel;
 class QDataflowTooltip;
+class QGraphicsSceneMouseEvent;
+class QMouseEvent;
 
 enum QDataflowItemType {
     QDataflowItemTypeNode = QGraphicsItem::UserType + 1,
@@ -45,8 +44,8 @@ class QDataflowCanvas : public QGraphicsView
 {
     Q_OBJECT
 public:
-    QDataflowCanvas(QWidget *parent);
-    virtual ~QDataflowCanvas();
+    QDataflowCanvas(QWidget *parent = {});
+    ~QDataflowCanvas() override;
 
     QDataflowModel * model();
     void setModel(QDataflowModel *model);
@@ -57,7 +56,7 @@ public:
     QList<QDataflowNode*> selectedNodes();
     QList<QDataflowConnection*> selectedConnections();
 
-    bool isSomeNodeInEditMode();
+    bool isSomeNodeInEditMode() const;
 
     QDataflowTextCompletion * completion() const {return completion_;}
     void setCompletion(QDataflowTextCompletion *completion) {completion_ = completion;}
@@ -79,17 +78,17 @@ protected:
     template<typename T>
     T * itemAtT(const QPointF &point);
 
-    void drawBackground(QPainter *painter, const QRectF &rect);
+    void drawBackground(QPainter *painter, const QRectF &rect) override;
+    void mouseDoubleClickEvent(QMouseEvent *event) override;
+    void keyPressEvent(QKeyEvent *event) override;
 
-protected slots:
-    void mouseDoubleClickEvent(QMouseEvent *event);
-    void keyPressEvent(QKeyEvent *event);
+protected Q_SLOTS:
     void itemTextEditorTextChange();
     void onNodeAdded(QDataflowModelNode *mdlnode);
     void onNodeRemoved(QDataflowModelNode *mdlnode);
     void onNodeValidChanged(QDataflowModelNode *mdlnode, bool valid);
-    void onNodePosChanged(QDataflowModelNode *mdlnode, QPoint pos);
-    void onNodeTextChanged(QDataflowModelNode *mdlnode, QString text);
+    void onNodePosChanged(QDataflowModelNode *mdlnode, const QPoint &pos);
+    void onNodeTextChanged(QDataflowModelNode *mdlnode, const QString &text);
     void onNodeInletCountChanged(QDataflowModelNode *mdlnode, int count);
     void onNodeOutletCountChanged(QDataflowModelNode *mdlnode, int count);
     void onConnectionAdded(QDataflowModelConnection *mdlconn);
@@ -130,9 +129,9 @@ public:
     int outletCount() const {return outlets_.size();}
     void setOutletCount(int count, bool skipAdjust = false);
 
-    int type() const {return QDataflowItemTypeNode;}
+    int type() const override {return QDataflowItemTypeNode;}
 
-    void setText(QString text);
+    void setText(const QString &text);
     QString text() const;
 
     void setValid(bool valid);
@@ -140,7 +139,7 @@ public:
 
     void adjustConnections() const;
 
-    QRectF boundingRect() const;
+    QRectF boundingRect() const override;
 
     void adjust();
 
@@ -158,16 +157,16 @@ public:
     QPen connectionPen() const;
     QPen invalidConnectionPen() const;
 
-    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
+    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
 
     void enterEditMode();
     void exitEditMode(bool revertText);
     bool isInEditMode() const;
 
 protected:
-    QVariant itemChange(GraphicsItemChange change, const QVariant &value);
+    QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
 
-    void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event);
+    void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) override;
 
 private:
     QDataflowCanvas *canvas_;
@@ -190,8 +189,6 @@ protected:
     QDataflowIOlet(QDataflowNode *node, int index);
 
 public:
-    virtual int type() const = 0;
-
     QDataflowNode * node() const {return node_;}
     int index() const {return index_;}
 
@@ -202,12 +199,12 @@ public:
 
     QDataflowCanvas * canvas() const {return canvas_;}
 
-    void hoverEnterEvent(QGraphicsSceneHoverEvent *event);
-    void hoverLeaveEvent(QGraphicsSceneHoverEvent *event);
-
 protected:
-    QRectF boundingRect() const;
-    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
+    void hoverEnterEvent(QGraphicsSceneHoverEvent *event) override;
+    void hoverLeaveEvent(QGraphicsSceneHoverEvent *event) override;
+
+    QRectF boundingRect() const override;
+    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
 
 private:
     QDataflowCanvas *canvas_;
@@ -228,7 +225,7 @@ protected:
     QDataflowInlet(QDataflowNode *node, int index);
 
 public:
-    int type() const {return QDataflowItemTypeInlet;}
+    int type() const override {return QDataflowItemTypeInlet;}
 
     void onDataRecevied(void *data);
 
@@ -242,12 +239,12 @@ protected:
     QDataflowOutlet(QDataflowNode *node, int index);
 
 public:
-    int type() const {return QDataflowItemTypeOutlet;}
+    int type() const override {return QDataflowItemTypeOutlet;}
 
 protected:
-    void mousePressEvent(QGraphicsSceneMouseEvent *event);
-    void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
-    void mouseMoveEvent(QGraphicsSceneMouseEvent *event);
+    void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
+    void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
+    void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
 
 private:
     QGraphicsLineItem *tmpConn_;
@@ -271,13 +268,13 @@ public:
 
     QDataflowCanvas * canvas() const {return canvas_;}
 
-    int type() const {return QDataflowItemTypeConnection;}
+    int type() const override {return QDataflowItemTypeConnection;}
 
 protected:
-    QRectF boundingRect() const;
-    QPainterPath shape() const;
+    QRectF boundingRect() const override;
+    QPainterPath shape() const override;
 
-    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
+    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) override;
 
 private:
     QDataflowCanvas *canvas_;
@@ -298,15 +295,16 @@ protected:
     QDataflowNodeTextLabel(QDataflowNode *node, QGraphicsItem *parent);
 
 public:
-    bool sceneEvent(QEvent *event);
-    void setCompletion(QStringList list);
+    void setCompletion(const QStringList &list);
     void clearCompletion();
     void acceptCompletion();
     void cycleCompletion(int d);
     void updateCompletion();
     void complete();
 
-    void focusOutEvent(QFocusEvent *event);
+protected:
+    bool sceneEvent(QEvent *event) override;
+    void focusOutEvent(QFocusEvent *event) override;
 
 private:
     QDataflowNode *node_;
@@ -321,10 +319,10 @@ private:
 class QDataflowTooltip : public QGraphicsItemGroup
 {
 protected:
-    QDataflowTooltip(QGraphicsItem *parentItem, QString text, QPointF offset);
+    QDataflowTooltip(QGraphicsItem *parentItem, const QString &text, const QPointF &offset);
 
 public:
-    void setText(QString text);
+    void setText(const QString &text);
     void adjust();
 
 private:
@@ -340,18 +338,20 @@ private:
 class QDataflowTextCompletion
 {
 public:
-    virtual void complete(QString nodeText, QStringList &completionList);
+    virtual QStringList complete(const QString &nodeText);
+    virtual ~QDataflowTextCompletion() = default;
 };
 
 template<typename T>
 T * QDataflowCanvas::itemAtT(const QPointF &point)
 {
-    foreach(QGraphicsItem *item, scene()->items(point, Qt::IntersectsItemShape, Qt::DescendingOrder, transform()))
+    auto const items = scene()->items(point, Qt::IntersectsItemShape, Qt::DescendingOrder, transform());
+    for(QGraphicsItem *item : items)
     {
          if(T *itemT = dynamic_cast<T*>(item))
              return itemT;
     }
-    return 0;
+    return {};
 }
 
 
