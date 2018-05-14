@@ -66,6 +66,8 @@ QDataflowCanvas::QDataflowCanvas(QWidget *parent)
 
 QDataflowCanvas::~QDataflowCanvas()
 {
+    scene()->clearSelection();
+
     foreach(QDataflowNode *node, ownedNodes_)
     {
         delete node;
