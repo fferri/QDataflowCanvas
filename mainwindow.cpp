@@ -155,7 +155,6 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
-    QObject::disconnect(canvas->scene(), &QGraphicsScene::selectionChanged, this, &MainWindow::onSelectionChanged);
 }
 
 void MainWindow::complete(QString txt, QStringList &completionList)
@@ -216,7 +215,7 @@ void MainWindow::onSelectionChanged()
         if(selConns.size() == 1) msg = QString("Selected connection %1").arg(reinterpret_cast<long long>(selConns[0]), 1, 16);
         else msg = QString("Selected %1 connections").arg(selConns.size());
     }
-    statusBar()->showMessage(msg, 10000);
+    statusbar->showMessage(msg, 10000);
 }
 
 void MainWindow::onDumpModel()
