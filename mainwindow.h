@@ -1,5 +1,6 @@
 /* QDataflowCanvas - a dataflow widget for Qt
  * Copyright (C) 2017 Federico Ferri
+ * Copyright (C) 2018 Kuba Ober
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,15 +21,14 @@
 #include "ui_mainwindow.h"
 #include "qdataflowcanvas.h"
 
-class MainWindow : public QMainWindow, private Ui::MainWindow, public QDataflowTextCompletion
+class MainWindow : public QMainWindow, private Ui::MainWindow, private QDataflowTextCompletion
 {
     Q_OBJECT
 
 public:
-    MainWindow(QWidget *parent = 0);
-    ~MainWindow();
+    MainWindow(QWidget *parent = {});
 
-    void complete(QString txt, QStringList &completionList) override;
+    QStringList complete(const QString &txt) override;
 
 private:
     QDataflowModelNode *sourceNode;
@@ -38,7 +38,7 @@ private slots:
     void setupNode(QDataflowModelNode *node);
     void processData();
     void onNodeAdded(QDataflowModelNode *node);
-    void onNodeTextChanged(QDataflowModelNode *node, QString text);
+    void onNodeTextChanged(QDataflowModelNode *node, const QString &text);
     void onSelectionChanged();
     void onDumpModel();
 };

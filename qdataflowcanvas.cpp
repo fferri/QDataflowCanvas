@@ -1,5 +1,6 @@
 /* QDataflowCanvas - a dataflow widget for Qt
  * Copyright (C) 2017 Federico Ferri
+ * Copyright (C) 2018 Kuba Ober
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,13 +27,15 @@
 #include <QGraphicsScene>
 #include <QGraphicsSceneMouseEvent>
 #include <QGraphicsDropShadowEffect>
+#include <QMouseEvent>
 #include <QPainter>
 #include <QStyleOption>
 #include <QApplication>
+#include <QTextCursor>
 #include <QTextDocument>
 
 QDataflowCanvas::QDataflowCanvas(QWidget *parent)
-    : QGraphicsView(parent), model_(0L)
+    : QGraphicsView(parent), model_()
 {
     QGraphicsScene *scene = new QGraphicsScene(this);
     scene->setItemIndexMethod(QGraphicsScene::NoIndex);
@@ -151,7 +154,7 @@ QDataflowNode * QDataflowCanvas::node(QDataflowModelNode *node)
     if(it == nodes_.end())
     {
         qDebug() << "WARNING:" << this << "does not know about" << node;
-        return 0L;
+        return {};
     }
     return *it;
 }
@@ -162,7 +165,7 @@ QDataflowConnection * QDataflowCanvas::connection(QDataflowModelConnection *conn
     if(it == connections_.end())
     {
         qDebug() << "WARNING:" << this << "does not know about" << conn;
-        return 0L;
+        return {};
     }
     return *it;
 }
@@ -367,7 +370,7 @@ void QDataflowCanvas::onNodeValidChanged(QDataflowModelNode *mdlnode, bool valid
     uinode->setValid(valid);
 }
 
-void QDataflowCanvas::onNodePosChanged(QDataflowModelNode *mdlnode, QPoint pos)
+void QDataflowCanvas::onNodePosChanged(QDataflowModelNode *mdlnode, const QPoint &pos)
 {
     QDataflowNode *uinode = node(mdlnode);
     if(uinode)
@@ -378,7 +381,7 @@ void QDataflowCanvas::onNodePosChanged(QDataflowModelNode *mdlnode, QPoint pos)
     }
 }
 
-void QDataflowCanvas::onNodeTextChanged(QDataflowModelNode *mdlnode, QString text)
+void QDataflowCanvas::onNodeTextChanged(QDataflowModelNode *mdlnode, const QString &text)
 {
     QDataflowNode *uinode = node(mdlnode);
     uinode->setText(text);
@@ -510,7 +513,7 @@ void QDataflowNode::setOutletCount(int count, bool skipAdjust)
         adjust();
 }
 
-void QDataflowNode::setText(QString text)
+void QDataflowNode::setText(const QString &text)
 {
     if(text == this->text()) return;
 
@@ -805,7 +808,7 @@ QDataflowInlet::QDataflowInlet(QDataflowNode *node, int index)
 }
 
 QDataflowOutlet::QDataflowOutlet(QDataflowNode *node, int index)
-    : QDataflowIOlet(node, index), tmpConn_(0L)
+    : QDataflowIOlet(node, index), tmpConn_()
 
 {
     tooltip_ = new QDataflowTooltip(this, node->modelNode()->outlet(index)->type(), QPointF(0, 20));
@@ -992,7 +995,7 @@ bool QDataflowNodeTextLabel::sceneEvent(QEvent *event)
     return QGraphicsTextItem::sceneEvent(event);
 }
 
-void QDataflowNodeTextLabel::setCompletion(QStringList list)
+void QDataflowNodeTextLabel::setCompletion(const QStringList &list)
 {
     clearCompletion();
 
@@ -1085,8 +1088,7 @@ void QDataflowNodeTextLabel::updateCompletion()
 void QDataflowNodeTextLabel::complete()
 {
     QString txt = document()->toPlainText();
-    QStringList completionList;
-    node_->canvas()->completion()->complete(txt, completionList);
+    QStringList completionList = node_->canvas()->completion()->complete(txt);
     setCompletion(completionList);
 }
 
@@ -1096,7 +1098,7 @@ void QDataflowNodeTextLabel::focusOutEvent(QFocusEvent *event)
     QGraphicsTextItem::focusOutEvent(event);
 }
 
-QDataflowTooltip::QDataflowTooltip(QGraphicsItem *parentItem, QString text, QPointF offset)
+QDataflowTooltip::QDataflowTooltip(QGraphicsItem *parentItem, const QString &text, const QPointF &offset)
     : QGraphicsItemGroup(parentItem), offset_(offset)
 {
     shape_ = new QGraphicsPathItem(this);
@@ -1109,7 +1111,7 @@ QDataflowTooltip::QDataflowTooltip(QGraphicsItem *parentItem, QString text, QPoi
     adjust();
 }
 
-void QDataflowTooltip::setText(QString text)
+void QDataflowTooltip::setText(const QString &text)
 {
     text_->setText(text);
 
@@ -1133,8 +1135,8 @@ void QDataflowTooltip::adjust()
     shape_->setPath(pTip.united(pRect).simplified());
 }
 
-void QDataflowTextCompletion::complete(QString nodeText, QStringList &completionList)
+QStringList QDataflowTextCompletion::complete(const QString &nodeText)
 {
     Q_UNUSED(nodeText);
-    Q_UNUSED(completionList);
+    return {};
 }

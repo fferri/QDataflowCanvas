@@ -1,5 +1,6 @@
 /* QDataflowCanvas - a dataflow widget for Qt
  * Copyright (C) 2017 Federico Ferri
+ * Copyright (C) 2018 Kuba Ober
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +24,7 @@
 class DFSource : public QDataflowMetaObject
 {
 public:
-    DFSource(QDataflowModelNode *node, QStringList args)
+    DFSource(QDataflowModelNode *node, const QStringList &args)
         : QDataflowMetaObject(node)
     {
         Q_UNUSED(args);
@@ -36,7 +37,7 @@ public:
 class DFMathBinOp : public QDataflowMetaObject
 {
 public:
-    DFMathBinOp(QDataflowModelNode *node, QStringList args)
+    DFMathBinOp(QDataflowModelNode *node, const QStringList &args)
         : QDataflowMetaObject(node)
     {
         s = 0;
@@ -76,7 +77,7 @@ private:
 class DFNum2Str : public QDataflowMetaObject
 {
 public:
-    DFNum2Str(QDataflowModelNode *node, QStringList args)
+    DFNum2Str(QDataflowModelNode *node, const QStringList &args)
         : QDataflowMetaObject(node)
     {
         Q_UNUSED(args);
@@ -97,7 +98,7 @@ public:
 class DFSink : public QDataflowMetaObject
 {
 public:
-    DFSink(QDataflowModelNode *node, QStringList args, QLineEdit *e)
+    DFSink(QDataflowModelNode *node, const QStringList &args, QLineEdit *e)
         : QDataflowMetaObject(node), e_(e)
     {
         Q_UNUSED(args);
@@ -153,15 +154,13 @@ MainWindow::MainWindow(QWidget *parent)
     model->connect(num2str, 0, sink, 0);
 }
 
-MainWindow::~MainWindow()
+QStringList MainWindow::complete(const QString &txt)
 {
-}
-
-void MainWindow::complete(QString txt, QStringList &completionList)
-{
+    QStringList completionList;
     foreach(QString className, classList)
         if(className.startsWith(txt) && className.length() > txt.length())
             completionList << className;
+    return completionList;
 }
 
 void MainWindow::setupNode(QDataflowModelNode *node)
@@ -190,7 +189,7 @@ void MainWindow::onNodeAdded(QDataflowModelNode *node)
     setupNode(node);
 }
 
-void MainWindow::onNodeTextChanged(QDataflowModelNode *node, QString text)
+void MainWindow::onNodeTextChanged(QDataflowModelNode *node, const QString &text)
 {
     Q_UNUSED(text);
     setupNode(node);

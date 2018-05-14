@@ -1,5 +1,6 @@
 /* QDataflowCanvas - a dataflow widget for Qt
  * Copyright (C) 2017 Federico Ferri
+ * Copyright (C) 2018 Kuba Ober
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,9 +24,9 @@ QDataflowModel::QDataflowModel(QObject *parent)
 
 }
 
-QDataflowModelNode * QDataflowModel::newNode(QPoint pos, QString text, int inletCount, int outletCount)
+QDataflowModelNode * QDataflowModel::newNode(const QPoint &pos, const QString &text, int inletCount, int outletCount)
 {
-    QDataflowModelNode *node = new QDataflowModelNode(0L, pos, text, inletCount, outletCount);
+    QDataflowModelNode *node = new QDataflowModelNode({}, pos, text, inletCount, outletCount);
     node->moveToThread(thread());
     node->setParent(this);
     return node;
@@ -33,13 +34,13 @@ QDataflowModelNode * QDataflowModel::newNode(QPoint pos, QString text, int inlet
 
 QDataflowModelConnection * QDataflowModel::newConnection(QDataflowModelNode *sourceNode, int sourceOutlet, QDataflowModelNode *destNode, int destInlet)
 {
-    QDataflowModelConnection *conn = new QDataflowModelConnection(0L, sourceNode->outlet(sourceOutlet), destNode->inlet(destInlet));
+    QDataflowModelConnection *conn = new QDataflowModelConnection({}, sourceNode->outlet(sourceOutlet), destNode->inlet(destInlet));
     conn->moveToThread(thread());
     conn->setParent(this);
     return conn;
 }
 
-QDataflowModelNode * QDataflowModel::create(QPoint pos, QString text, int inletCount, int outletCount)
+QDataflowModelNode * QDataflowModel::create(const QPoint &pos, const QString &text, int inletCount, int outletCount)
 {
     QDataflowModelNode *node = newNode(pos, text, inletCount, outletCount);
     nodes_.insert(node);
@@ -73,16 +74,16 @@ void QDataflowModel::remove(QDataflowModelNode *node)
 
 QDataflowModelConnection * QDataflowModel::connect(QDataflowModelConnection *conn)
 {
-    if(!conn) return 0L;
-    if(!findConnections(conn).isEmpty()) return 0L;
+    if(!conn) return {};
+    if(!findConnections(conn).isEmpty()) return {};
     addConnection(conn);
     return conn;
 }
 
 QDataflowModelConnection * QDataflowModel::connect(QDataflowModelNode *sourceNode, int sourceOutlet, QDataflowModelNode *destNode, int destInlet)
 {
-    if(!sourceNode || !destNode) return 0L;
-    if(!findConnections(sourceNode, sourceOutlet, destNode, destInlet).isEmpty()) return 0L;
+    if(!sourceNode || !destNode) return {};
+    if(!findConnections(sourceNode, sourceOutlet, destNode, destInlet).isEmpty()) return {};
     QDataflowModelConnection *conn = newConnection(sourceNode, sourceOutlet, destNode, destInlet);
     addConnection(conn);
     return conn;
@@ -174,13 +175,13 @@ void QDataflowModel::onValidChanged(bool valid)
         emit nodeValidChanged(node, valid);
 }
 
-void QDataflowModel::onPosChanged(QPoint pos)
+void QDataflowModel::onPosChanged(const QPoint &pos)
 {
     if(QDataflowModelNode *node = dynamic_cast<QDataflowModelNode*>(sender()))
         emit nodePosChanged(node, pos);
 }
 
-void QDataflowModel::onTextChanged(QString text)
+void QDataflowModel::onTextChanged(const QString &text)
 {
     if(QDataflowModelNode *node = dynamic_cast<QDataflowModelNode*>(sender()))
         emit nodeTextChanged(node, text);
@@ -198,15 +199,15 @@ void QDataflowModel::onOutletCountChanged(int count)
         emit nodeOutletCountChanged(node, count);
 }
 
-QDataflowModelNode::QDataflowModelNode(QDataflowModel *parent, QPoint pos, QString text, int inletCount, int outletCount)
-    : QObject(parent), valid_(false), pos_(pos), text_(text), dataflowMetaObject_(0L)
+QDataflowModelNode::QDataflowModelNode(QDataflowModel *parent, const QPoint &pos, const QString &text, int inletCount, int outletCount)
+    : QObject(parent), valid_(false), pos_(pos), text_(text), dataflowMetaObject_()
 {
     for(int i = 0; i < inletCount; i++) addInlet();
     for(int i = 0; i < outletCount; i++) addOutlet();
 }
 
-QDataflowModelNode::QDataflowModelNode(QDataflowModel *parent, QPoint pos, QString text, QStringList inletTypes, QStringList outletTypes)
-    : QObject(parent), valid_(false), pos_(pos), text_(text), dataflowMetaObject_(0L)
+QDataflowModelNode::QDataflowModelNode(QDataflowModel *parent, const QPoint &pos, const QString &text, const QStringList &inletTypes, const QStringList &outletTypes)
+    : QObject(parent), valid_(false), pos_(pos), text_(text), dataflowMetaObject_()
 {
     foreach(const QString &inletType, inletTypes) addInlet(inletType);
     foreach(const QString &outletType, outletTypes) addOutlet(outletType);
@@ -258,7 +259,7 @@ QDataflowModelInlet * QDataflowModelNode::inlet(int index) const
     if(index >= 0 && index < inlets_.length())
         return inlets_[index];
     else
-        return 0L;
+        return {};
 }
 
 int QDataflowModelNode::inletCount() const
@@ -276,7 +277,7 @@ QDataflowModelOutlet * QDataflowModelNode::outlet(int index) const
     if(index >= 0 && index < outlets_.length())
         return outlets_[index];
     else
-        return 0L;
+        return {};
 }
 
 int QDataflowModelNode::outletCount() const
@@ -291,7 +292,7 @@ void QDataflowModelNode::setValid(bool valid)
     emit validChanged(valid);
 }
 
-void QDataflowModelNode::setPos(QPoint pos)
+void QDataflowModelNode::setPos(const QPoint &pos)
 {
     if(pos_ == pos) return;
     pos_ = pos;
@@ -305,7 +306,7 @@ void QDataflowModelNode::setText(const QString &text)
     emit textChanged(text);
 }
 
-void QDataflowModelNode::addInlet(QString name, QString type)
+void QDataflowModelNode::addInlet(const QString &name, const QString &type)
 {
     addInlet(new QDataflowModelInlet(this, inletCount(), name, type));
 }
@@ -337,7 +338,7 @@ void QDataflowModelNode::setInletCount(int count)
     emit inletCountChanged(count);
 }
 
-void QDataflowModelNode::setInletTypes(QStringList types)
+void QDataflowModelNode::setInletTypes(const QStringList &types)
 {
     int oldCount = inletCount();
 
@@ -359,10 +360,11 @@ void QDataflowModelNode::setInletTypes(QStringList types)
 void QDataflowModelNode::setInletTypes(std::initializer_list<const char*> types_)
 {
     QStringList types;
+    types.reserve(types_.size());
 
     for(const char *type : types_)
     {
-        types << type;
+        types << QString::fromUtf8(type);
     }
 
     setInletTypes(types);
@@ -400,7 +402,7 @@ void QDataflowModelNode::setOutletCount(int count)
     emit outletCountChanged(count);
 }
 
-void QDataflowModelNode::setOutletTypes(QStringList types)
+void QDataflowModelNode::setOutletTypes(const QStringList &types)
 {
     int oldCount = outletCount();
 
@@ -422,10 +424,11 @@ void QDataflowModelNode::setOutletTypes(QStringList types)
 void QDataflowModelNode::setOutletTypes(std::initializer_list<const char *> types_)
 {
     QStringList types;
+    types.reserve(types_.size());
 
     for(const char *type : types_)
     {
-        types << type;
+        types << QString::fromUtf8(type);
     }
 
     setOutletTypes(types);
@@ -461,7 +464,7 @@ QDebug operator<<(QDebug debug, const QDataflowModelNode *node)
     return debug << *node;
 }
 
-QDataflowModelIOlet::QDataflowModelIOlet(QDataflowModelNode *parent, int index, QString name, QString type)
+QDataflowModelIOlet::QDataflowModelIOlet(QDataflowModelNode *parent, int index, const QString &name, const QString &type)
     : QObject(parent), node_(parent), index_(index), name_(name), type_(type)
 {
 
@@ -502,7 +505,7 @@ QList<QDataflowModelConnection*> QDataflowModelIOlet::connections() const
     return connections_;
 }
 
-QDataflowModelInlet::QDataflowModelInlet(QDataflowModelNode *parent, int index, QString name, QString type)
+QDataflowModelInlet::QDataflowModelInlet(QDataflowModelNode *parent, int index, const QString &name, const QString &type)
     : QDataflowModelIOlet(parent, index, name, type)
 {
 
@@ -528,7 +531,7 @@ QDebug operator<<(QDebug debug, const QDataflowModelInlet *inlet)
     return debug << *inlet;
 }
 
-QDataflowModelOutlet::QDataflowModelOutlet(QDataflowModelNode *parent, int index, QString name, QString type)
+QDataflowModelOutlet::QDataflowModelOutlet(QDataflowModelNode *parent, int index, const QString &name, const QString &type)
     : QDataflowModelIOlet(parent, index, name, type)
 {
 
@@ -637,12 +640,12 @@ void QDataflowModelDebugSignals::onNodeRemoved(QDataflowModelNode *node)
     debug() << "nodeRemoved" << node;
 }
 
-void QDataflowModelDebugSignals::onNodePosChanged(QDataflowModelNode *node, QPoint pos)
+void QDataflowModelDebugSignals::onNodePosChanged(QDataflowModelNode *node, const QPoint &pos)
 {
     debug() << "nodePosChanged" << node << pos;
 }
 
-void QDataflowModelDebugSignals::onNodeTextChanged(QDataflowModelNode *node, QString text)
+void QDataflowModelDebugSignals::onNodeTextChanged(QDataflowModelNode *node, const QString &text)
 {
     debug() << "nodeTextChanged" << node << text;
 }
