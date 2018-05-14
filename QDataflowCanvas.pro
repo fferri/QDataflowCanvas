@@ -1,5 +1,5 @@
 # QDataflowCanvas - a dataflow widget for Qt
-# Copyright (C) 2017 Federico Ferri
+# Copyright (C) 2017-2018 Federico Ferri
 # Copyright (C) 2018 Kuba Ober
 
 QT += widgets
